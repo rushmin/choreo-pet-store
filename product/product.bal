@@ -12,7 +12,7 @@ type Database record {|
 
 configurable Database database = ?;
 
-final mysql:Client dbClient = check new (database.host, database.username, database.password, database.name, database.port);
+final mysql:Client dbClient = check new (database.host, database.username, database.password, database.name, database.port,connectionPool={maxOpenConnections: 3});
 
 function getProducts() returns Product[]{
     
