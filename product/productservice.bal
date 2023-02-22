@@ -1,68 +1,66 @@
 import ballerina/graphql;
-import ballerina/log;
+import ballerina/io;
 
-type ProductItem record {|
+type ProdcutRecord record {
     int id;
-    string name;
+    string title;
     string description;
-    string image;
-    decimal price;   
-    string variation;
-    string sku;
-|};
+    string includes;
+    string intended_for;
+    string color;
+    string material;
+    decimal price;
+};
 
-service class ProductItems {
+service class Product{
 
-    private final readonly & ProductItem productItem;
+    private final readonly & ProdcutRecord prodcutRecord;
 
-    function init(ProductItem productItem){
-        self.productItem = productItem.cloneReadOnly();
+    function init(ProdcutRecord prodcutRecord) {
+        self.prodcutRecord = prodcutRecord.cloneReadOnly();
     }
-
-    resource function get name() returns string {
-        return self.productItem.name;
+    resource function get id() returns int {
+        return self.prodcutRecord.id;
     }
-
+    resource function get title() returns string {
+        return self.prodcutRecord.title;
+    }
     resource function get description() returns string {
-        return self.productItem.description;
+        return self.prodcutRecord.description;
     }
-
-    resource function get image() returns string {
-        return self.productItem.image;
+    resource function get includes() returns string {
+        return self.prodcutRecord.includes;
     }
-
+    resource function get inteded_for() returns string {
+        return self.prodcutRecord.intended_for;
+    }
+    resource function get color() returns string {
+        return self.prodcutRecord.color;
+    }
+    resource function get material() returns string {
+        return self.prodcutRecord.material;
+    }
     resource function get price() returns decimal {
-        return self.productItem.price;
-    }
-
-    resource function get variation() returns string {
-        return self.productItem.variation;
-    }
-
-    resource function get sku() returns string {
-        return self.productItem.sku;
+        return self.prodcutRecord.price;
     }
 }
 
 
-service /catalog on new graphql:Listener(9000) {
+service / on new graphql:Listener(9090) {
 
-    resource function get catalog(string? sku) returns ProductItems[] | error {
-        log:printInfo("function is called ###########");
-        return getProductItems(sku);
+    resource function get product() returns Product[]|error {
+        return getProducts();
     }
 
-    resource function get all() returns ProductItems[]|error {
-      log:printInfo("function is called ###########");
-        return getAllProductItems();
-    }
-
-    remote function addProductItem(string? name, string? description, string? image, 
-    decimal? price, string? variation) returns int {
-
-        log:printInfo("function is called ###########");
-        int|error ret = addProductItem(name, description, image, price, variation);
+    remote function addProduct(string title, string description, string includes,
+                                                string intended_for, string color,
+                                                string material, decimal price) returns int {
+        int|error ret = addProduct(title, description, includes, intended_for, color, material, price);
+        io:println(ret);
         return ret is error ? -1 : ret;
     }
 
+    remote function deleteProduct(int id) returns int|error{
+        return deleteProduct(id);
+    }
 }

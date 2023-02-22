@@ -1,9 +1,6 @@
 import ballerinax/mysql.driver as _;
 import ballerinax/mysql;
 import ballerina/sql;
-import ballerina/uuid;
-import ballerina/log;
-
 
 type Database record {|
     string host;
@@ -13,128 +10,45 @@ type Database record {|
     string password;
 |};
 
-type Follow record {|
-    string id;
-    string user_id;
-    string product_id;
-    boolean follow;
-|};
-
-
-// type Product record {|
-//  string name;
-//  string description;
-//  decimal price;
-//  string variation_option;
-//  string image;
- 
-// |};
-
-
-// type Category record {|
-//  string name;
-//  int id;
-//  string variation;
- 
-// |};
-
-
 configurable Database database = ?;
 
 final mysql:Client dbClient = check new (database.host, database.username, database.password, database.name, database.port);
 
+function getProducts() returns Product[]{
+    
+    sql:ParameterizedQuery query = `SELECT * FROM product`;
+    stream<ProdcutRecord, sql:Error?> resultStream = dbClient->query(query);
 
-function getProductItems(string? sku) returns ProductItems[] | error {
-
-
-    log:printInfo(<string>sku);
-    ProductItem[] product = [];
-  
-
-    stream<ProductItem, error?>  resultStream = dbClient->query(`select  * from product where sku = "${sku}"`);
-
-    check from ProductItem employee in resultStream
-        do {
-            product.push(employee);
+    ProdcutRecord[]|error? productRecords = from var {id,title, description, includes, intended_for, color, material, price} in resultStream
+        select {
+            id:id,
+            title: title,
+            description: description,
+            includes: includes,
+            intended_for: intended_for,
+            color: color,
+            material: material,
+            price: price
         };
-  
-    check resultStream.close();
 
-    log:printInfo("Output : " + product.toJsonString());
-
-    ProductItems[] productItems = [];
-    if product is ProductItem[] {
-        productItems = product.map(br => new ProductItems(br));
+    Product[] products = [];
+    if productRecords is ProdcutRecord[] {
+        products = productRecords.map(pr => new Product(pr));
     }
 
-    return productItems;
+    return products;
 }
 
+function addProduct(string title, string description, string includes,
+                                                string intended_for, string color,
+                                                string material, decimal price) returns int|error {
 
-function getAllProductItems() returns ProductItems []|error {
-
-    log:printInfo("function is called ###########");
-
-    ProductItem[] product = [];
-
-    stream<ProductItem, error?>  resultStream = dbClient->query(`select  * from product`);
-
-    check from ProductItem employee in resultStream
-        do {
-            product.push(employee);
-        };
-  
-    check resultStream.close();
-    log:printInfo(product.toJsonString());
-
-    ProductItems[] productItems = [];
-    if product is ProductItem[] {
-        productItems = product.map(br => new ProductItems(br));
-    }
-    return productItems;
+    sql:ExecutionResult result = check dbClient->execute(`INSERT INTO product(title, description, includes, intended_for, color, material, price) VALUES 
+                                                          (${title},${description},${includes},${intended_for},${color},${material},${price})`);
+    return <int>result.lastInsertId;
 }
 
-
-function addProductItem(string? name, string? description, string? image,
-    decimal? price, string? variation) returns int|error {
-
-    string uuid1String = uuid:createType1AsString();
-
-    sql:ExecutionResult finalResult = check dbClient->execute(
-        `INSERT INTO product(name, description, image, sku, price, variation) VALUES 
-        (${name},${description},${image},${uuid1String}, ${price}$, ${variation})`);
-    return <int>finalResult.lastInsertId;
-
-}
-
-function 
-
-getFollows(string? userId) returns Follow []|error {
-
-    log:printInfo("function is called ###########");
-
-    Follow[] follows = [];
-
-    stream<Follow, error?>  resultStream = dbClient->query(`select  * from product_review where user_id=${userId}`);
-
-    check from Follow employee in resultStream
-        do {
-            follows.push(employee);
-        };
-  
-    check resultStream.close();
-    log:printInfo(follows.toJsonString());
-
-    return follows;
-}
-
-function addFollow(string? userId, string? sku) returns int|error {
-
-    log:printInfo("function is called ###########");
-
-    sql:ExecutionResult finalResult = check dbClient->execute(
-        `INSERT INTO product_review(user_id, product_id, follow) VALUES 
-        (${userId}, (SELECT id from product WHERE sku = ${sku}) , true)`);
-
-    return <int>finalResult.lastInsertId;
+function deleteProduct(int id) returns int|error{
+    sql:ExecutionResult result = check dbClient->execute(`DELETE FROM product WHERE id=${id}`);
+    return <int>result.affectedRowCount;
 }
