@@ -344,8 +344,8 @@ modules = [
 ]
 
 [[package]]
-org = "rushminfernando"
-name = "product"
+org = "rushminwso2"
+name = "pet_store"
 version = "0.1.0"
 dependencies = [
 	{org = "ballerina", name = "graphql"},
@@ -357,7 +357,7 @@ dependencies = [
 	{org = "ballerinax", name = "mysql.driver"}
 ]
 modules = [
-	{org = "rushminfernando", packageName = "product", moduleName = "product"}
+	{org = "rushminwso2", packageName = "pet_store", moduleName = "pet_store"}
 ]
 
 
